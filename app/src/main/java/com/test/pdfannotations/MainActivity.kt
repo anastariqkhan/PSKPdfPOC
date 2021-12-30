@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.pspdfkit.annotations.Annotation
 import com.pspdfkit.configuration.PdfConfiguration
 import com.pspdfkit.configuration.page.PageScrollDirection
+import com.pspdfkit.document.PdfDocument
+import com.pspdfkit.listeners.DocumentListener
 import com.pspdfkit.ui.PdfFragment
 import com.pspdfkit.ui.special_mode.controller.AnnotationSelectionController
 import com.pspdfkit.ui.special_mode.manager.AnnotationManager
@@ -14,6 +16,7 @@ import com.pspdfkit.ui.special_mode.manager.AnnotationManager
 private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
+    var count = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -39,6 +42,32 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, annotation.creator.toString())
 
             }
+        })
+
+        pdfFragment.addDocumentListener(object : DocumentListener {
+            override fun onDocumentLoaded(document: PdfDocument) {
+                super.onDocumentLoaded(document)
+                // Retrieve the total number of pages in the document.
+                val documentPageCount = document.pageCount
+
+                // get the first annotation in the document
+                val allAnnotations = (0..documentPageCount - 1)
+                    .asSequence()
+                    .mapNotNull { page ->
+                        document.annotationProvider.getAnnotations(page).takeUnless { it.isEmpty() }
+                    }
+
+                val annotation = allAnnotations.firstOrNull()?.first()
+
+                if (annotation != null) {
+                    //navigate to the page of the annotation and select it
+                    pdfFragment.setPageIndex(annotation.pageIndex, true)
+                    pdfFragment.setSelectedAnnotation(annotation)
+
+                    Log.i("Selected Annotation", annotation.type.toString())
+                }
+            }
+
         })
 
     }
